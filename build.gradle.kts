@@ -21,7 +21,11 @@ java {
 sourceSets {
     main {
         java.setSrcDirs(listOf("src"))
-        resources.setSrcDirs(listOf("META-INF"))
+        resources {
+            // 从仓库根取 META-INF/**，确保 plugin.xml 落在 jar 的 META-INF/plugin.xml
+            srcDir(".")
+            include("META-INF/**")
+        }
     }
 }
 
