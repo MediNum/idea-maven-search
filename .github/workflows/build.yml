@@ -1,0 +1,48 @@
+name: Build Plugin
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14"
+
+      - name: Build plugin
+        run: gradle buildPlugin --no-daemon
+
+      # 从磁盘安装要求 .jar 后缀（zip/jar 同格式）
+      - name: Package as installable jar
+        shell: bash
+        run: |
+          ZIP=$(ls build/distributions/*.zip | head -1)
+          cp "$ZIP" "${ZIP%.zip}.jar"
+          ls -la build/distributions/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-jar
+          path: build/distributions/*.jar
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/distributions/*.jar
+          generate_release_notes: true

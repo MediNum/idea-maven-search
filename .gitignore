@@ -1,6 +1,7 @@
 # ---- 构建产物 ----
 out/
 dist/
+build/
 MavenSearch-*.jar
 
 # ---- IDE ----

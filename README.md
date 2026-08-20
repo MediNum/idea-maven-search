@@ -1,5 +1,8 @@
 # Maven Search — IntelliJ IDEA 插件
 
+[![Build Plugin](https://github.com/num110/idea-maven-search/actions/workflows/build.yml/badge.svg)](https://github.com/num110/idea-maven-search/actions/workflows/build.yml)
+[English](README.en.md)
+
 IDEA Maven Search 同用法（Tools → Maven Search）的 Maven 组件搜索工具，支持
 **多数据源仓库 + 延迟自动择优**：mvn.coderead.cn（国内镜像）+ Maven Central + 用户自定义仓库。
 
