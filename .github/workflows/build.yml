@@ -29,23 +29,25 @@ jobs:
       - name: Build plugin
         run: gradle buildPlugin --no-daemon
 
-      # 从磁盘安装要求 .jar 后缀（zip/jar 同格式）
-      - name: Package as installable jar
+      # 从磁盘安装要求 .jar 且 plugin.xml 在根级：取分发包内部的 instrumented 插件 jar
+      - name: Package installable jar
         shell: bash
         run: |
-          ZIP=$(ls build/distributions/*.zip | head -1)
-          cp "$ZIP" "${ZIP%.zip}.jar"
-          ls -la build/distributions/
+          mkdir -p build/installable
+          INNER=$(find build -name 'instrumented-*.jar' | head -1)
+          echo "inner jar: $INNER"
+          cp "$INNER" build/installable/maven-search-1.5.6.jar
+          ls -la build/installable/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: plugin-jar
-          path: build/distributions/*.jar
+          path: build/installable/*.jar
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: build/distributions/*.jar
+          files: build/installable/*.jar
           generate_release_notes: true
