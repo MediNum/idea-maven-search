@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.dsh"
-version = "1.5.6"
+version = "1.5.7"
 
 repositories {
     mavenCentral()
@@ -37,7 +37,7 @@ intellij {
 tasks {
     patchPluginXml {
         sinceBuild.set("261.0")
-        version.set("1.5.6")
+        version.set("1.5.7")
     }
     buildSearchableOptions {
         enabled = false

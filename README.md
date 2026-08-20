@@ -33,16 +33,18 @@ IDEA Maven Search 同用法（Tools → Maven Search）的 Maven 组件搜索工
 ## 安装（从磁盘安装）
 
 > ⚠️ 注意：IDEA 2026.2 的 "Install Plugin from Disk" **只认 `.jar` 后缀**（`.zip` 会被
-> 判定为非插件包并报 "Fail to load plugin descriptor"）。产物就是 `MavenSearch-1.5.6.jar`（zip/jar 同格式）。
+> 判定为非插件包并报 "Fail to load plugin descriptor"）。产物就是 `MavenSearch-1.5.7.jar`（zip/jar 同格式）。
 
 1. IDEA：`File → Settings → Plugins`（或 `Ctrl+Alt+S`）
 2. 点击右上角齿轮 ⚙ → `Install Plugin from Disk...`
-3. 选择本文件同目录下的 **`MavenSearch-1.5.6.jar`**
+3. 选择本文件同目录下的 **`MavenSearch-1.5.7.jar`**
 4. 重启 IDEA
 5. 打开任意项目 → `Tools` 菜单 → `Maven Search`
 
 ## 更新记录
 
+- **1.5.7** 修复：插件描述改为以拉丁字母开头且超过 40 字符，通过 JetBrains
+  Marketplace 上传审核校验
 - **1.5.6** 更新：打开工具即自动测速（原有）；默认数据源固定为 http://mvn.coderead.cn
   （打开立即生效，测速完成后仍按延迟择优）
 - **1.5.5** 界面调整：将"清除历史"从一级页面按钮移除，集成到搜索下拉框最底部
@@ -107,7 +109,7 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 
 构建脚本直接用本机安装的 IDEA（`IntelliJ IDEA 2026.1.3`，实际平台
 build 262.8665 / 2026.2）自带的平台 jar（lib\*）与其 JBR（Java 25）编译，再用 JDK 的
-jar.exe 打包，全程零下载。产出 `MavenSearch-1.5.6.jar`。
+jar.exe 打包，全程零下载。产出 `MavenSearch-1.5.7.jar`。
 
 > 提示：如果换了 IDEA 安装路径，请先修改 `build.ps1` 顶部的 `$IDEA` / `$JBR`。
 

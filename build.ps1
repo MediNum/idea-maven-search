@@ -12,7 +12,7 @@ $dist   = Join-Path $Root 'dist'
 # NOTE: IDEA 2026.2 "Install Plugin from Disk" only loads files ending in .jar
 # (a .zip goes down a different branch and the descriptor load returns null).
 # A plugin zip IS a jar, so ship it as .jar.
-$artifact = Join-Path $Root 'MavenSearch-1.5.6.jar'
+$artifact = Join-Path $Root 'MavenSearch-1.5.7.jar'
 
 if (Test-Path $out)  { Remove-Item $out -Recurse -Force }
 if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }

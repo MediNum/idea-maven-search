@@ -39,12 +39,12 @@ Chinese version: [README.md](README.md)
 
 > ⚠️ IntelliJ 2026.2's "Install Plugin from Disk" only loads files with a **`.jar`**
 > extension (a `.zip` goes down a different branch and reports
-> "Fail to load plugin descriptor"). The artifact is `MavenSearch-1.5.6.jar`
+> "Fail to load plugin descriptor"). The artifact is `MavenSearch-1.5.7.jar`
 > (zip and jar are the same format).
 
 1. IDEA: `File → Settings → Plugins` (or `Ctrl+Alt+S`)
 2. Click the gear ⚙ → **Install Plugin from Disk...**
-3. Select **`MavenSearch-1.5.6.jar`**
+3. Select **`MavenSearch-1.5.7.jar`**
 4. Restart IDEA
 5. Open any project → `Tools` menu → **Maven Search**
 
@@ -61,17 +61,19 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 
 `build.ps1` compiles against the platform jars of the locally installed IDEA
 (`$IDEA\lib\*`) with its bundled JBR (Java 25) and packages with the JDK's `jar.exe`,
-producing `MavenSearch-1.5.6.jar`. Adjust `$IDEA` / `$JBR` at the top of the script if
+producing `MavenSearch-1.5.7.jar`. Adjust `$IDEA` / `$JBR` at the top of the script if
 your IDEA path differs.
 
 ### CI (GitHub Actions)
 
-Push a tag like `v1.5.6` — the workflow `.github/workflows/build.yml` builds the
+Push a tag like `v1.5.7` — the workflow `.github/workflows/build.yml` builds the
 plugin with the IntelliJ Platform Gradle plugin (JDK 25 + Gradle), uploads the jar as
 an artifact, and creates a GitHub Release with the installable `.jar`.
 
 ## Changelog
 
+- **1.5.7** Fix: plugin description now starts with Latin characters and exceeds 40
+  characters, passing JetBrains Marketplace upload validation
 - **1.5.6** Default data source is `http://mvn.coderead.cn` (effective immediately;
   latency test still auto-runs and may switch to a faster repository)
 - **1.5.5** "Clear history" moved into the bottom of the search dropdown (gray,

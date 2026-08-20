@@ -2,19 +2,21 @@
     <id>com.dsh.maven-search</id>
     <name>Maven Search (coderead)</name>
     <vendor email="hc7200@126.com" url="https://github.com/num110/idea-maven-search">HC</vendor>
-    <version>1.5.6</version>
+    <version>1.5.7</version>
     <description><![CDATA[
-        <h3>Maven Search</h3>
-        <p>与 IDEA 官方 Maven Search 插件相同用法的 Maven 中央仓库搜索工具，数据源
-        <a href="https://mvn.coderead.cn">mvn.coderead.cn</a>（国内镜像，毫秒级响应）。</p>
+        Maven Search is a Maven Central artifact search tool for IntelliJ IDEA, working the same way as the official Maven Search plugin. It searches Maven Central via the fast domestic mirror
+        <a href="https://mvn.coderead.cn">mvn.coderead.cn</a> with millisecond-level response.
+        <h3>Features</h3>
         <ul>
-            <li><b>Tools → Maven Search</b> 打开搜索面板</li>
-            <li>输入 artifactId / groupId 搜索组件；支持 Class 模式按类名搜索</li>
-            <li>查看全部版本，一键复制 Maven XML / Gradle 依赖片段</li>
-            <li>下载 jar 到系统下载目录</li>
+            <li><b>Tools → Maven Search</b> opens the search panel</li>
+            <li>Search by artifactId / groupId; Class mode searches by class name</li>
+            <li>View all versions and copy Maven XML / Gradle dependency snippets with one click</li>
+            <li>Download the jar to your system download directory</li>
+            <li>Multi-repository latency testing with automatic selection of the fastest repository</li>
         </ul>
     ]]></description>
     <change-notes><![CDATA[
+        <p>1.5.7 更新：修复插件描述格式，通过 JetBrains Marketplace 审核（描述以拉丁字母开头且长度超过 40 字符）。</p>
         <p>1.5.6 更新：打开工具即自动测速（原有）；默认数据源固定为 http://mvn.coderead.cn（打开立即生效，测速完成后仍按延迟择优）。</p>
         <p>1.5.5 界面调整：将"清除历史"从一级页面按钮移除，集成到搜索下拉框最底部（灰色居中样式，点击即清空历史）。</p>
         <p>1.5.4 修复："清除历史"按钮依旧未生效 —— 顶栏改用 GridBagLayout（搜索框弹性伸缩），修复按钮被挤出可视/可点击区域的问题；并加日志便于排查。</p>
