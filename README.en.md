@@ -23,15 +23,15 @@ repositories** with **automatic latency-based selection**.
   Maven XML / Gradle snippets
 - **jar download**: custom mirror → official → Aliyun fallback
 - **Settings**: ⚙ in-panel second-level page; repository list as an editable table
-  (click a cell to edit, auto-save; latency-test button per row); new **preferences**:
-  add extra default repository URLs (auto-loaded on every open, survives "restore
-  defaults") and toggle auto latency-testing on tool window open (on by default)
+  (click a cell to edit, auto-save; latency-test button per row); **preferences** in
+  the same style: extra default repository table and a toggle for auto latency-testing
+  on tool window open (on by default)
 - **Class mode**: search by class name
 
 ## Install
 
 1. `File → Settings → Plugins` (or `Ctrl+Alt+S`)
-2. Gear ⚙ → **Install Plugin from Disk...** → select `MavenSearch-1.5.9.jar`
+2. Gear ⚙ → **Install Plugin from Disk...** → select `MavenSearch-1.5.10.jar`
 3. Restart IDEA, open any project → `Tools` → **Maven Search**
 
 > ⚠️ IntelliJ 2026.2's "Install Plugin from Disk" only loads files with a **`.jar`**
@@ -39,6 +39,8 @@ repositories** with **automatic latency-based selection**.
 
 ## Changelog
 
+- **1.5.10** UI polish: settings preferences restyled like the repository table —
+  extra default repos use the same editable table with per-row latency buttons
 - **1.5.9** New: settings page now has "preferences" — add extra default repository
   URLs (auto-loaded on every open) and toggle auto latency-testing on open (default on)
 - **1.5.8** New: integrated into IDEA Search Everywhere (double Shift) — a new
@@ -79,7 +81,7 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
 Compiles against the locally installed IDEA jars + its JBR (zero download),
-producing `MavenSearch-1.5.9.jar`.
+producing `MavenSearch-1.5.10.jar`.
 CI (GitHub Actions): push a `v*` tag to build and create a Release.
 
 ## Technical notes

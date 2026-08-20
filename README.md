@@ -19,14 +19,14 @@
   XML** 并弹窗提示；支持复制 Maven XML / Gradle 片段
 - **下载 jar**：自定义镜像 → 官方 → 阿里云依次回退
 - **设置页**：⚙ 内嵌二级页面，仓库地址表格化管理（点击单元格编辑、自动保存），
-  每行带延迟测试按钮；新增**首选项**：可添加**额外默认仓库地址**（每次打开工具
-  自动加载，不随恢复默认丢失）、可开关**打开工具时自动测试仓库延迟**（默认开）
+  每行带延迟测试按钮；新增**首选项**：额外默认仓库地址表（与主表同风格，每次
+  打开工具自动加载，不随恢复默认丢失）、**打开工具时自动测试仓库延迟**开关（默认开）
 - **Class 模式**：按类名搜索
 
 ## 安装
 
 1. `File → Settings → Plugins`（`Ctrl+Alt+S`）
-2. ⚙ → **Install Plugin from Disk...** 选择 `MavenSearch-1.5.9.jar`
+2. ⚙ → **Install Plugin from Disk...** 选择 `MavenSearch-1.5.10.jar`
 3. 重启 IDEA，打开任意项目 → `Tools` → **Maven Search**
 
 > ⚠️ IDEA 2026.2 的 "Install Plugin from Disk" 只认 `.jar` 后缀
@@ -34,6 +34,9 @@
 
 ## 更新记录
 
+- **1.5.10** 界面美化：设置页首选项区与仓库地址表统一风格 —— 额外默认仓库地址
+  改用与主表一致的可编辑表格（点击单元格直接修改、自动保存），每行带延迟测试
+  按钮、支持测试全部延迟；自动测速开关并入首选项操作行
 - **1.5.9** 新增功能：设置页新增"首选项"—— 可添加额外默认仓库地址（每次打开工具
   自动加载）；可开关"打开工具窗口时自动测试仓库延迟"（默认开）
 - **1.5.8** 新增功能：集成到 IDEA Search Everywhere（双击 Shift）—— 新增 "Maven"
@@ -71,7 +74,7 @@
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-用本机 IDEA 自带 jar + JBR 编译，零下载，产出 `MavenSearch-1.5.9.jar`。
+用本机 IDEA 自带 jar + JBR 编译，零下载，产出 `MavenSearch-1.5.10.jar`。
 CI（GitHub Actions）：推送 `v*` tag 自动构建并生成 Release。
 
 ## 技术说明
