@@ -1,99 +1,86 @@
 # Maven Search — IntelliJ IDEA Plugin
 
-A Maven artifact search tool for IntelliJ IDEA with the same usage as the official
-"Maven Search" plugin (`Tools → Maven Search`). It supports **multiple data-source
-repositories** (mvn.coderead.cn, Maven Central, Aliyun/Huawei/Tencent mirrors, and any
-custom repository) with **automatic latency-based selection**.
+[![Build Plugin](https://github.com/MediNum/idea-maven-search/actions/workflows/build.yml/badge.svg)](https://github.com/MediNum/idea-maven-search/actions/workflows/build.yml)
+[中文](README.md)
 
-Chinese version: [README.md](README.md)
+A Maven artifact search tool for IntelliJ IDEA with the same usage as the official
+"Maven Search" plugin (`Tools → Maven Search`). Supports **multiple data-source
+repositories** with **automatic latency-based selection**.
 
 ## Features
 
-- **Tools → Maven Search** opens a docked tool window (falls back to a dialog if the
-  tool window is not registered)
-- **Multi-repository**: default repos include mvn.coderead.cn, search.maven.org,
-  repo1.maven.org, repo.maven.apache.org, central.sonatype.com, Aliyun public,
-  Huawei Cloud, Tencent Nexus — all editable in **⚙ Settings** (in-panel second-level
-  page, not a dialog; the repository list is shown as a table — click a cell to edit,
-  click elsewhere to auto-save; each row has a latency-test button showing the
-  measured latency; saving auto-runs the latency test)
-- **Latency auto-selection**: on opening, the tool auto-tests all repositories, rotates
-  each one's latency in the bottom status bar (1s each), then shows only the
-  lowest-latency repository and switches to it as the data source; if you type while
-  the test is running, a centered notice "正在进行延迟测试，请稍后…" is shown with the
-  per-repository progress, and the search runs automatically when the test finishes
-- **Type-to-search**: the search box is empty by default (history is in the dropdown —
-  click the search box to see past queries, recorded on Enter/history selection/result
-  click, newest first, deduplicated, capped at 20, persisted; a "清除历史" item at the
-  bottom of the dropdown clears all history); searches automatically 350ms after you
-  stop typing; Class mode searches by class name (e.g. `JSONObject`)
-- **Auto version load**: clicking an artifact loads all versions and auto-selects the
-  newest; **double-clicking a version copies its Maven XML** to the clipboard with a
-  "复制成功" popup; the description is shown between the version list and the Maven XML
-  box; Maven XML / Gradle snippets and jar download (custom mirror → official → Aliyun)
-  are one click away
-- **Default data source**: http://mvn.coderead.cn (effective immediately on open;
-  after the latency test, the fastest repository wins)
+- **Tools → Maven Search** opens the search panel; type-to-search (results appear
+  automatically 350ms after you stop typing)
+- **Multiple repositories**: mvn.coderead.cn (default, effective immediately on open)
+  + Maven Central + custom repositories; auto-tests latency and picks the fastest
+- **Search history**: click the search box to see past queries (newest first,
+  deduplicated, capped at 20, persisted); "清除历史" at the bottom clears all
+- **Versions & copy**: click an artifact to load all versions and auto-select the
+  newest; **double-click a version to copy its Maven XML** with a popup; copy
+  Maven XML / Gradle snippets
+- **jar download**: custom mirror → official → Aliyun fallback
+- **Settings**: ⚙ in-panel second-level page; repository list as an editable table
+  (click a cell to edit, auto-save; latency-test button per row)
+- **Class mode**: search by class name
 
 ## Install
 
+1. `File → Settings → Plugins` (or `Ctrl+Alt+S`)
+2. Gear ⚙ → **Install Plugin from Disk...** → select `MavenSearch-1.5.7.jar`
+3. Restart IDEA, open any project → `Tools` → **Maven Search**
+
 > ⚠️ IntelliJ 2026.2's "Install Plugin from Disk" only loads files with a **`.jar`**
-> extension (a `.zip` goes down a different branch and reports
-> "Fail to load plugin descriptor"). The artifact is `MavenSearch-1.5.7.jar`
-> (zip and jar are the same format).
+> extension (a `.zip` reports "Fail to load plugin descriptor").
 
-1. IDEA: `File → Settings → Plugins` (or `Ctrl+Alt+S`)
-2. Click the gear ⚙ → **Install Plugin from Disk...**
-3. Select **`MavenSearch-1.5.7.jar`**
-4. Restart IDEA
-5. Open any project → `Tools` menu → **Maven Search**
+## Changelog
 
-You can also grab the latest `.jar` from the [GitHub Releases](../../releases)
-(built automatically by CI on every `v*` tag).
+- **1.5.7** Fix plugin description format to pass JetBrains Marketplace validation
+- **1.5.6** Default data source fixed to mvn.coderead.cn (effective immediately;
+  latency test still auto-runs and may switch to a faster repository)
+- **1.5.5** "Clear history" moved into the bottom of the search dropdown
+- **1.5.4** Fix: "clear history" button pushed out of the clickable area
+  (top bar now uses GridBagLayout)
+- **1.5.3** Fix: "clear history" not working (removed the confirm dialog)
+- **1.5.2** Search box empty by default on open; added "clear history"
+- **1.5.1** Search box width 36, no "search" button; latency-test wait notice
+- **1.5.0** Reverted 1.4.9 search-box changes
+- **1.4.9** Wider search box, no "search" button (reverted)
+- **1.4.8** History dropdown on the search box
+- **1.4.7** ← clears input and returns to home
+- **1.4.6** Description position adjusted
+- **1.4.5** Double-click a version copies Maven XML; home shows the version
+- **1.4.4** Click a version to auto-copy its Maven XML
+- **1.4.3** Settings as a table
+- **1.4.2** Settings layout polish
+- **1.4.1** Repository table + latency buttons
+- **1.4.0** Settings shows all repositories; 6 more default mirrors
+- **1.3.3** Settings page back logic
+- **1.3.2** Home usage hint
+- **1.3.1** ← / ⚙ layout adjustments
+- **1.3.0** Repository settings & latency auto-selection
+- **1.2.1** Fix: no response when clicking the same item after going back
+- **1.2.0** Added Maven Central data source
+- **1.1.0** Type-to-search
+- **1.0.0** Initial version
 
 ## Building
-
-### Locally (no network/Gradle required)
 
 ```
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-`build.ps1` compiles against the platform jars of the locally installed IDEA
-(`$IDEA\lib\*`) with its bundled JBR (Java 25) and packages with the JDK's `jar.exe`,
-producing `MavenSearch-1.5.7.jar`. Adjust `$IDEA` / `$JBR` at the top of the script if
-your IDEA path differs.
+Compiles against the locally installed IDEA jars + its JBR (zero download),
+producing `MavenSearch-1.5.7.jar`.
+CI (GitHub Actions): push a `v*` tag to build and create a Release.
 
-### CI (GitHub Actions)
+## Technical notes
 
-Push a tag like `v1.5.7` — the workflow `.github/workflows/build.yml` builds the
-plugin with the IntelliJ Platform Gradle plugin (JDK 25 + Gradle), uploads the jar as
-an artifact, and creates a GitHub Release with the installable `.jar`.
-
-## Changelog
-
-- **1.5.7** Fix: plugin description now starts with Latin characters and exceeds 40
-  characters, passing JetBrains Marketplace upload validation
-- **1.5.6** Default data source is `http://mvn.coderead.cn` (effective immediately;
-  latency test still auto-runs and may switch to a faster repository)
-- **1.5.5** "Clear history" moved into the bottom of the search dropdown (gray,
-  centered) — no longer a first-page button
-- **1.5.4** Fix: the "clear history" button was pushed out of the clickable area —
-  top bar now uses GridBagLayout (search box flexes)
-- **1.5.3** Fix: "clear history" not working — removed the confirm dialog, clears
-  directly with exception protection
-- **1.5.2** Fix: search box empty by default on open (history stays in the dropdown);
-  added "clear history"
-- **1.5.1** Search box width 36 (prototype string; fixes the disappearing box) and no
-  "search" button; latency-test wait notice in the page center with progress
-- **1.5.0** Fix: reverted 1.4.9 search-box changes (restored the search button)
-- **1.4.8** History dropdown on the search box (click to see past queries)
-- **1.4.4** Click a version to auto-copy its Maven XML
-- **1.4.0** Settings shows all repositories (defaults + custom, editable/deletable/
-  restorable); 6 more default mirrors
-- **1.3.x** Settings second-level page, latency test + auto-selection, input-to-search,
-  UI polish
-- **1.0.0** Initial version: search / versions / snippet copy / jar download
+- Pure Java, no third-party dependencies: `HttpURLConnection` + built-in `MiniJson`
+- Data sources: mvn.coderead.cn (/search JSON + /version HTML), Maven Central
+  (Solr search + maven-metadata.xml), custom repositories (maven-metadata.xml)
+- Latency selection: parallel testing in background → status bar polling → switch to
+  the fastest repository; settings persisted via `PropertiesComponent`
+- Compatibility: `since-build="261.0"`, only depends on `com.intellij.modules.platform`
 
 ## License
 
