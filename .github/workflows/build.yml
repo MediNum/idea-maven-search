@@ -12,17 +12,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 25
+      - name: Set up JDK (Gradle daemon)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "25"
+          java-version: "21"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.14"
 
+      # 插件编译使用 Java toolchain 25（foojay 自动下载），Gradle 守护进程跑在 JDK 21
       - name: Build plugin
         run: gradle buildPlugin --no-daemon
 
