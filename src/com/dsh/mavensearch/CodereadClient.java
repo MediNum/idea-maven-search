@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -81,8 +80,6 @@ public final class CodereadClient {
         public final String groupId;
         public final String artifactId;
         public String description = "";
-        public String docs = "";
-        public String source = "";
         public final List<VersionInfo> versions = new ArrayList<>();
 
         public VersionDetail(String groupId, String artifactId) {
@@ -156,13 +153,6 @@ public final class CodereadClient {
         }
     }
 
-    public static String jarUrl(String groupId, String artifactId, String version) {
-        return "https://repo1.maven.org/maven2/"
-                + groupId.replace('.', '/') + "/"
-                + artifactId + "/" + version + "/"
-                + artifactId + "-" + version + ".jar";
-    }
-
     /** 下载候选地址：优先指定仓库（如用户添加的镜像），再 Maven Central 官方 + 阿里云镜像。 */
     public static String[] jarUrls(String preferredBase, String groupId, String artifactId, String version) {
         String path = groupId.replace('.', '/') + "/" + artifactId + "/" + version + "/"
@@ -174,10 +164,6 @@ public final class CodereadClient {
         urls.add("https://repo1.maven.org/maven2/" + path);
         urls.add("https://maven.aliyun.com/repository/central/" + path);
         return urls.toArray(new String[0]);
-    }
-
-    public static String[] jarUrls(String groupId, String artifactId, String version) {
-        return jarUrls(null, groupId, artifactId, version);
     }
 
     private static String trimBase(String base) {
@@ -280,26 +266,6 @@ public final class CodereadClient {
     }
 
     /** 探测一个 URL 是否可达（短超时，仅用于数据源状态展示）。 */
-    public static boolean isReachable(String url) {
-        try {
-            HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-            c.setConnectTimeout(4000);
-            c.setReadTimeout(7000);
-            c.setInstanceFollowRedirects(true);
-            c.setRequestProperty("User-Agent", UA);
-            int code = c.getResponseCode();
-            c.disconnect();
-            return code < 400;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    /** 直接抓取一个完整 URL（不带 coderead 基础地址）。 */
-    public static String httpGetUrl(String url) throws IOException {
-        return rawGet(url);
-    }
-
     /** 直接抓取一个完整 URL，可自定义连接/读取超时（毫秒）。 */
     public static String httpGetUrl(String url, int connectMs, int readMs) throws IOException {
         return rawGet(url, connectMs, readMs);
@@ -341,23 +307,6 @@ public final class CodereadClient {
 
         d.description = stripTags(firstMatch(html,
                 "<div style=\"color: rgba\\(0,0,0,\\.6\\);line-height: 1\\.6;\">([\\s\\S]*?)</div>"));
-
-        Matcher lm = Pattern.compile(
-                "href=\"/redirect\\?site=([^\"]+)\"><i class=\"ui icon ([a-z]+)\"></i>([^<]*)</a>")
-                .matcher(html);
-        while (lm.find()) {
-            String site = decode(lm.group(1));
-            String label = stripTags(lm.group(3));
-            if ("file".equals(lm.group(2)) || label.toLowerCase().contains("doc") || label.toLowerCase().contains("wiki")) {
-                d.docs = site;
-            } else if ("code".equals(lm.group(2)) || label.contains("源") || label.toLowerCase().contains("github")) {
-                d.source = site;
-            } else if (d.docs.isEmpty()) {
-                d.docs = site;
-            } else {
-                d.source = site;
-            }
-        }
 
         Matcher rm = Pattern.compile(
                 "<tr onclick=\"doFold\\(\\$\\(this\\)\\)\">\\s*<td>([^<]*)</td>"
@@ -426,14 +375,6 @@ public final class CodereadClient {
     static String enc(String s) {
         try {
             return URLEncoder.encode(s, StandardCharsets.UTF_8.name());
-        } catch (Exception e) {
-            return s;
-        }
-    }
-
-    private static String decode(String s) {
-        try {
-            return URLDecoder.decode(s, StandardCharsets.UTF_8.name());
         } catch (Exception e) {
             return s;
         }

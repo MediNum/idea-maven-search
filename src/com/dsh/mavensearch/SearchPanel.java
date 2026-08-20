@@ -46,8 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Maven 搜索面板：多数据源仓库（内置 + 用户自定义）、输入即搜索、版本/依赖片段、下载；
- * 打开时自动测试各仓库延迟，轮询显示（每个 1 秒），结束后切换为延迟最小的仓库。
+ * Maven 搜索面板：主要数据源由设置页首选项决定，输入即搜索、版本/依赖片段、下载。
  */
 public class SearchPanel extends JPanel {
     private static final Logger LOG = Logger.getInstance("com.dsh.mavensearch.SearchPanel");
@@ -60,16 +59,14 @@ public class SearchPanel extends JPanel {
     /** 搜索下拉框最底部的"清除历史"项标识。 */
     private static final String SENTINEL = "— 清除历史记录 —";
 
-    /** 工具默认仓库地址（可在设置中修改/恢复）。 */
+    /**
+     * 工具默认仓库地址（可在设置中修改/恢复）。
+     * 只保留可搜索仓库（coderead / central 类型）；不可搜索的镜像仓库
+     * （阿里云/华为云/腾讯云/repo1 等，仅下载用途）不再内置，避免加入
+     * 首选项后搜索不可用。
+     */
     static final String[] DEFAULT_REPOS = {
-            "http://mvn.coderead.cn",
-            "https://search.maven.org",
-            "https://repo1.maven.org/maven2",
-            "https://repo.maven.apache.org/maven2",
-            "https://central.sonatype.com",
-            "https://maven.aliyun.com/repository/public",
-            "https://repo.huaweicloud.com/repository/maven",
-            "https://mirrors.cloud.tencent.com/nexus/repository/maven-public"
+            "https://search.maven.org"
     };
 
     /** 首次打开工具时居中显示的使用方式（13 号字，灰度），含插件版本号。 */
@@ -108,15 +105,13 @@ public class SearchPanel extends JPanel {
     // ---------------- 仓库模型 ----------------
 
     static final class Repo {
-        final String id;
         final String name;
         final String kind;    // coderead | central | generic
         final String baseUrl;
         long latencyMs = -1;
         boolean reachable = false;
 
-        Repo(String id, String name, String kind, String baseUrl) {
-            this.id = id;
+        Repo(String name, String kind, String baseUrl) {
             this.name = name;
             this.kind = kind;
             this.baseUrl = baseUrl;
@@ -158,6 +153,8 @@ public class SearchPanel extends JPanel {
     private final Project project;
     private final JComboBox<String> searchCombo = new JComboBox<>();
     private String lastQuery = "";
+    /** 防止 recordHistory 修改下拉 model 时触发连锁 actionPerformed 重入。 */
+    private boolean historyUpdating = false;
     private final JComboBox<String> modeBox = new JComboBox<>(new String[]{"JAR", "Class"});
     private final JButton settingsBtn = new JButton("⚙");
     private final JButton backBtn = new JButton("←");
@@ -188,16 +185,12 @@ public class SearchPanel extends JPanel {
     private int searchSeq = 0;
     private boolean searchPending = false;
     private boolean searchBusy = false;
-    private boolean latencyTesting = false;
     private final Timer debounce = new Timer(350, e -> requestSearch());
 
     // ---------------- 仓库列表与延迟 ----------------
     private final List<Repo> repos = new ArrayList<>();
-    private Repo activeRepo;   // 延迟最小的仓库（数据源 / 下载）
-    private Repo searchRepo;   // 延迟最小的可搜索仓库（搜索用）
-    private final Timer rotationTimer = new Timer(1000, null);
-    private final int[] rotationIdx = {0};
-    private List<Repo> rotationList = new ArrayList<>();
+    private Repo activeRepo;   // 当前数据源（下载）
+    private Repo searchRepo;   // 搜索源（可搜索仓库）
 
     public SearchPanel(Project project) {
         this.project = project;
@@ -317,12 +310,34 @@ public class SearchPanel extends JPanel {
         ensureSentinel(); // 下拉框最底部固定"清除历史"项
         setSearchText(""); // 打开工具搜索框默认为空（历史记录保留在下拉中）
         searchCombo.addActionListener(e -> {
+            // recordHistory 修改下拉 model 时，删除选中项会触发 JComboBox
+            // 连锁 setSelectedItem → 再次 fire actionPerformed；这里拦截重入，
+            // 否则编辑框内容会被 JComboBox 改成相邻历史项（如点 hutool 变 alibaba）
+            if (historyUpdating) return;
             String cur = searchText();
             if (SENTINEL.equals(cur)) {
-                clearHistory(); // 点击下拉底部的清除项：直接清空
+                historyUpdating = true;
+                try {
+                    clearHistory(); // 点击下拉底部的清除项：直接清空
+                } finally {
+                    historyUpdating = false;
+                }
                 return;
             }
-            recordHistory(cur); // 回车/选择历史项：记录并搜索
+            debounce.stop(); // 选择历史项立即搜索，避免编辑器文本变化再触发 350ms 重复搜索
+            historyUpdating = true;
+            try {
+                recordHistory(cur); // 回车/选择历史项：记录并搜索
+                // recordHistory 去重置顶删除的正是当前选中项，JDK 会把选中项改成
+                // 前一项（如 alibaba）；这里把"选中项本身"恢复为点击项，
+                // 编辑器随之同步，后续 UI 事件才不会再把编辑框改回相邻项
+                searchCombo.setSelectedItem(cur);
+            } finally {
+                historyUpdating = false;
+            }
+            // 恢复编辑框为刚选择的关键词（双保险，保证搜索的是用户点选的内容）
+            setSearchText(cur);
+            debounce.stop(); // 恢复文本触发的防抖重启立即停掉，避免 350ms 后重复搜索
             requestSearch();
         });
         modeBox.addActionListener(e -> requestSearch());
@@ -394,35 +409,27 @@ public class SearchPanel extends JPanel {
         copyGradleBtn.addActionListener(e -> copy(gradleArea.getText()));
         downloadBtn.addActionListener(e -> doDownload());
 
-        // 延迟轮询显示计时器：每个仓库显示 1 秒
-        rotationTimer.addActionListener(e -> {
-            if (rotationIdx[0] < rotationList.size()) {
-                Repo r = rotationList.get(rotationIdx[0]++);
-                repoStatus.setText(r.reachable
-                        ? "⏱ " + r.name + "：" + r.latencyMs + " ms"
-                        : "❌ " + r.name + "：不可达");
-                // 已输入内容且仍在测延迟 → 页面正中更新测试过程
-                if (latencyTesting && !searchText().isEmpty()) {
-                    emptyLabel.setText(latencyWaitHtml(rotationList, rotationIdx[0]));
-                    searchCards.show(searchInner, "empty");
-                }
-            } else {
-                rotationTimer.stop();
-                selectBest(rotationList);
-            }
-        });
-
+        // 主要数据源由设置页首选项决定（默认首选项为空 → 主要数据源为空，不内置任何默认源）
         loadRepos();
-        // 首选项：是否在打开工具窗口时自动测试仓库延迟（默认开）
-        if (isAutoTestEnabled()) {
-            probeRepositories(); // 打开工具自动测试延迟
-        } else {
-            repoStatus.setText("自动测速已关闭（⚙ 设置中开启）");
-            activeRepo = searchRepo;
-        }
+        refreshDataSources();
     }
 
     // ---------------- 仓库管理与延迟测试 ----------------
+
+    /**
+     * 加载仓库后刷新数据源状态：开启自动测速时只测首选项（主要数据源）连接
+     * 并按延迟择优；关闭时直接使用当前搜索源。
+     */
+    private void refreshDataSources() {
+        if (isAutoTestEnabled()) {
+            probeBackupRepositories();
+        } else {
+            activeRepo = searchRepo;
+            if (searchRepo != null) {
+                repoStatus.setText("数据源: " + searchRepo.name + "（默认）");
+            }
+        }
+    }
 
     private void loadRepos() {
         repos.clear();
@@ -437,36 +444,27 @@ public class SearchPanel extends JPanel {
         if (urls.isEmpty()) {
             for (String d : DEFAULT_REPOS) urls.add(d);
         }
-        // 保证至少保留一个可搜索仓库，避免搜索不可用
-        boolean hasSearchable = false;
-        for (String u : urls) {
-            String k = classifyKind(u);
-            if ("coderead".equals(k) || "central".equals(k)) {
-                hasSearchable = true;
-                break;
-            }
-        }
-        if (!hasSearchable) {
-            urls.add(0, "http://mvn.coderead.cn");
-            urls.add(1, "https://search.maven.org");
-        }
-        // 合并首选项中的额外默认仓库地址（去重，每次启动自动加载）
-        for (String u : getExtraDefaultRepos()) {
+        // 主要数据源：完全由首选项决定（首选项为空 → 主要数据源也为空，不内置默认源）
+        List<String> primary = getExtraDefaultRepos();
+        // 合并首选项（主要数据源）地址（去重，每次启动自动加载）
+        for (String u : primary) {
             if (!u.isEmpty() && !urls.contains(u)) urls.add(u);
         }
         for (String u : urls) {
             String kind = classifyKind(u);
-            repos.add(new Repo("r-" + repos.size(), displayName(u, kind), kind, u));
+            repos.add(new Repo(displayName(u, kind), kind, u));
         }
-        // 默认数据源：http://mvn.coderead.cn（存在时），否则取第一个可搜索仓库；
-        // 之后仍会自动测速并按延迟择优
         searchRepo = null;
-        for (Repo r : repos) {
-            if ("coderead".equals(r.kind)) {
-                searchRepo = r;
-                break;
+        if (!primary.isEmpty()) {
+            for (Repo r : repos) {
+                if (primary.contains(r.baseUrl) && isSearchable(r)) {
+                    searchRepo = r;
+                    break;
+                }
             }
         }
+        // 首选项中的主要数据源不可搜索（如仅下载用的镜像仓库）时，
+        // 搜索自动回退到可搜索仓库（Maven Central），保证添加数据源后搜索立即可用
         if (searchRepo == null) {
             for (Repo r : repos) {
                 if (isSearchable(r)) {
@@ -474,6 +472,12 @@ public class SearchPanel extends JPanel {
                     break;
                 }
             }
+        }
+        // 仍无任何可搜索仓库：内置 Maven Central 作为搜索兜底（不写入首选项）
+        if (searchRepo == null) {
+            Repo fallback = new Repo("Maven Central", "central", "https://search.maven.org");
+            repos.add(fallback);
+            searchRepo = fallback;
         }
         activeRepo = searchRepo;
     }
@@ -491,13 +495,13 @@ public class SearchPanel extends JPanel {
         showCard("settings");
     }
 
-    /** 应用设置页的全部修改：首选项（额外默认仓库 + 自动测速开关）+ 仓库地址列表。 */
+    /** 应用设置页的全部修改：首选项（主要数据源 + 测速开关）+ 仓库地址列表。 */
     private void applySettings() {
         saveExtraDefaultRepos(settingsPage.getExtraDefaultRepos());
         setAutoTestEnabled(settingsPage.isAutoTestEnabled());
         saveUserRepos(settingsPage.getRepoUrls());
         loadRepos();
-        probeRepositories();
+        refreshDataSources();
     }
 
     private void showCard(String name) {
@@ -533,8 +537,28 @@ public class SearchPanel extends JPanel {
 
     // ---------------- 首选项（额外默认仓库 / 自动延迟测试） ----------------
 
+    /** 旧版默认数据源迁移标记：只迁移一次，避免误删用户手动添加的 coderead。 */
+    private static final String KEY_MIGRATED = "com.dsh.maven-search.extraReposMigrated";
+
+    /**
+     * 迁移旧版本残留（只执行一次）：1.5.18 及更早版本会自动把默认数据源
+     * mvn.coderead.cn 写入首选项。1.5.19 起 coderead 不再是内置默认数据源，
+     * 首次启动时若持久化恰好等于旧默认值则清除；
+     * 之后（标记已置位）不再干预，用户手动添加 coderead 不会被误删。
+     */
+    static void migrateLegacyDefaultPrimary() {
+        PropertiesComponent pc = PropertiesComponent.getInstance();
+        if (pc.getBoolean(KEY_MIGRATED, false)) return; // 已迁移过，不再干预
+        String saved = pc.getValue(KEY_EXTRA_REPOS);
+        if (saved != null && saved.trim().equals("http://mvn.coderead.cn")) {
+            pc.setValue(KEY_EXTRA_REPOS, "");
+        }
+        pc.setValue(KEY_MIGRATED, true);
+    }
+
     /** 读取首选项：额外默认仓库地址（持久化，\n 分隔）。 */
     static List<String> getExtraDefaultRepos() {
+        migrateLegacyDefaultPrimary(); // 首次启动清除旧版残留（之后不再干预）
         List<String> out = new ArrayList<>();
         String saved = PropertiesComponent.getInstance().getValue(KEY_EXTRA_REPOS, "");
         if (saved != null) {
@@ -556,7 +580,7 @@ public class SearchPanel extends JPanel {
         PropertiesComponent.getInstance().setValue(KEY_EXTRA_REPOS, sb.toString());
     }
 
-    /** 读取首选项：打开工具窗口时是否自动测试仓库延迟（默认开）。 */
+    /** 读取首选项：打开工具窗口时是否测试主要数据源（首选项）连接（默认开）。 */
     static boolean isAutoTestEnabled() {
         return PropertiesComponent.getInstance().getBoolean(KEY_AUTO_TEST, true);
     }
@@ -579,7 +603,6 @@ public class SearchPanel extends JPanel {
 
     /**
      * Search Everywhere（双击 Shift）集成入口：填入关键词并立即触发搜索。
-     * 若正在延迟测试，会显示等待提示，测速结束后自动搜索。
      */
     public void searchFromEverywhere(String keyword) {
         setSearchText(keyword == null ? "" : keyword.trim());
@@ -665,74 +688,53 @@ public class SearchPanel extends JPanel {
         PropertiesComponent.getInstance().setValue(KEY_HISTORY, sb.toString());
     }
 
-    /** 在网络上测试全部仓库延迟，轮询显示（每个 1 秒），结束后切换为延迟最小的仓库。 */
-    private void probeRepositories() {
-        latencyTesting = true; // 延迟测试进行中：输入时页面正中提示等待
-        repoStatus.setText("正在测试仓库延迟…");
-        final List<Repo> snapshot = new ArrayList<>(repos);
+    /**
+     * 打开工具时测试首选项（主要数据源）仓库的连接，不再全部测速。
+     * 首选项持久化数据与设置页首选项表完全一致（挂钩相等）：
+     * 默认首选项为空 → 主要数据源也为空（不内置默认数据源）；
+     * 用户未添加任何主要数据源时，状态栏提示"主要数据源 | 请添加主要数据源"。
+     */
+    private void probeBackupRepositories() {
+        final List<String> primaryUrls = getExtraDefaultRepos();
+        if (primaryUrls.isEmpty()) {
+            // 首选项为空：主要数据源也为空，提示用户添加
+            activeRepo = searchRepo;
+            repoStatus.setText("主要数据源 | 请添加主要数据源");
+            return;
+        }
+        repoStatus.setText("正在测试主要数据源连接…");
+        final List<Repo> targets = new ArrayList<>();
+        for (Repo r : repos) {
+            if (primaryUrls.contains(r.baseUrl)) targets.add(r);
+        }
+        if (targets.isEmpty()) {
+            activeRepo = searchRepo;
+            if (searchRepo != null) repoStatus.setText("数据源: " + searchRepo.name);
+            return;
+        }
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            for (Repo r : snapshot) {
+            for (Repo r : targets) {
                 long ms = CodereadClient.measureLatency(probeUrlFor(r));
                 r.latencyMs = ms;
                 r.reachable = ms >= 0;
             }
             SwingUtilities.invokeLater(() -> {
-                rotationIdx[0] = 0;
-                rotationList = new ArrayList<>(snapshot);
-                rotationTimer.restart();
+                // 自动切换到延迟最低且可达的主要数据源
+                Repo best = null;
+                for (Repo r : targets) {
+                    if (r.reachable && (best == null || r.latencyMs < best.latencyMs)) best = r;
+                }
+                if (best != null) {
+                    activeRepo = best;
+                    if (isSearchable(best)) searchRepo = best;
+                    repoStatus.setText("✅ 数据源: " + best.name + " (" + best.latencyMs + " ms)");
+                } else {
+                    repoStatus.setText("⚠ 所有主要数据源均不可达，请检查网络或更换数据源");
+                }
+                // 若已有输入，用切换后的数据源自动搜索
+                if (!searchText().isEmpty()) requestSearch();
             });
         });
-    }
-
-    private void selectBest(List<Repo> list) {
-        latencyTesting = false; // 延迟测试结束
-        Repo best = null;
-        for (Repo r : list) {
-            if (r.reachable && (best == null || r.latencyMs < best.latencyMs)) best = r;
-        }
-        if (best == null) {
-            activeRepo = null;
-            searchRepo = null;
-            repoStatus.setText("❌ 所有仓库不可达，请检查网络或到设置中添加仓库");
-            emptyLabel.setText(welcomeHtml());
-            status.setText("输入关键词搜索 Maven 组件（自动选择延迟最低的仓库）");
-            return;
-        }
-        activeRepo = best;
-        // 搜索源：延迟最小的可搜索仓库
-        searchRepo = null;
-        for (Repo r : list) {
-            if (r.reachable && isSearchable(r) && (searchRepo == null || r.latencyMs < searchRepo.latencyMs)) {
-                searchRepo = r;
-            }
-        }
-        if (searchRepo == null) searchRepo = best;
-        String text = "✅ 数据源: " + best.name + " (" + best.latencyMs + " ms)";
-        if (searchRepo != best) text += "｜搜索: " + searchRepo.name;
-        repoStatus.setText(text);
-        // 若已有输入，用新数据源自动搜索；否则恢复默认欢迎页
-        if (!searchText().isEmpty()) requestSearch();
-        else {
-            emptyLabel.setText(welcomeHtml());
-            status.setText("输入关键词搜索 Maven 组件（自动选择延迟最低的仓库）");
-        }
-    }
-
-    /** 延迟测试过程中的页面正中提示（标题 + 各仓库测试进度）。 */
-    private static String latencyWaitHtml(List<Repo> list, int measured) {
-        StringBuilder sb = new StringBuilder(
-                "<html><div style='text-align:center;font-size:15px;line-height:2.0;color:#909090'>"
-                        + "<div style='font-size:16px;font-weight:bold;color:#707070;margin-bottom:6px'>正在进行延迟测试，请稍后…</div>");
-        for (int i = 0; i < list.size(); i++) {
-            Repo r = list.get(i);
-            String mark;
-            if (i < measured) mark = (r.reachable ? "✓ " + r.latencyMs + " ms" : "✗ 不可达");
-            else if (i == measured) mark = "⏱ 测试中…";
-            else mark = "…";
-            sb.append(r.name).append(": ").append(mark).append("<br/>");
-        }
-        sb.append("</div></html>");
-        return sb.toString();
     }
 
     // ---------------- 搜索 ----------------
@@ -755,16 +757,6 @@ public class SearchPanel extends JPanel {
             status.setText("输入关键词搜索 Maven 组件（自动选择延迟最低的仓库）");
             return;
         }
-        // 延迟测试未结束时：页面正中提示等待并显示测试过程，结束后自动搜索
-        if (latencyTesting) {
-            searchPending = false;
-            emptyLabel.setText(rotationList.isEmpty()
-                    ? "<html><div style='text-align:center;font-size:15px;color:#909090'>正在进行延迟测试，请稍后…</div></html>"
-                    : latencyWaitHtml(rotationList, rotationIdx[0]));
-            searchCards.show(searchInner, "empty");
-            showCard("search");
-            return;
-        }
         if (searchBusy) {
             return; // 有搜索在跑；结束后 startSearch 会自动补发最新请求
         }
@@ -779,7 +771,7 @@ public class SearchPanel extends JPanel {
         final Repo src = searchRepo;
         if (src == null || !isSearchable(src)) {
             searchBusy = false;
-            status.setText("当前没有可用的搜索仓库，请到 ⚙ 设置 中检查仓库可达性");
+            status.setText("请先到 ⚙ 设置 的首选项中添加主要数据源（如 mvn.coderead.cn 或 Maven Central）");
             return;
         }
         final int seq = searchSeq;
@@ -799,12 +791,15 @@ public class SearchPanel extends JPanel {
                     lastQuery = kw; // 记录本次成功的查询，供点击结果时写入历史
                     resultsModel.clear();
                     for (CodereadClient.Artifact a : list) resultsModel.addElement(a);
-                    showCard("search");
-                    if (list.isEmpty()) {
-                        emptyLabel.setText(NO_RESULTS_HTML);
-                        searchCards.show(searchInner, "empty");
-                    } else {
-                        searchCards.show(searchInner, "list");
+                    // 若用户已在二级页面（detail），只更新结果列表，不强制切回搜索页
+                    if (!"detail".equals(currentCard)) {
+                        showCard("search");
+                        if (list.isEmpty()) {
+                            emptyLabel.setText(NO_RESULTS_HTML);
+                            searchCards.show(searchInner, "empty");
+                        } else {
+                            searchCards.show(searchInner, "list");
+                        }
                     }
                     status.setText("找到 " + list.size() + " 个结果（" + src.name + "）");
                     searchBusy = false;
@@ -830,8 +825,20 @@ public class SearchPanel extends JPanel {
 
     private void openArtifact(CodereadClient.Artifact a) {
         current = a;
-        // 点击了某次查询的结果 → 将该查询记入历史
-        if (!lastQuery.isEmpty()) recordHistory(lastQuery);
+        // 点击了某次查询的结果 → 将该查询记入历史。
+        // 同样用 historyUpdating 保护，避免模型修改触发连锁 actionPerformed 重入；
+        // 选中项恢复为当前查询词，防止编辑框被改成相邻历史项
+        if (!lastQuery.isEmpty()) {
+            historyUpdating = true;
+            try {
+                recordHistory(lastQuery);
+                searchCombo.setSelectedItem(lastQuery);
+                setSearchText(lastQuery);
+            } finally {
+                historyUpdating = false;
+            }
+            debounce.stop();
+        }
         crumb.setText(a.artifactId + "  (" + a.groupId + ")");
         versionsModel.clear();
         mavenArea.setText("");

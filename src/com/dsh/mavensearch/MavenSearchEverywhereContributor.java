@@ -11,7 +11,6 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
 import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
@@ -71,8 +70,21 @@ public class MavenSearchEverywhereContributor implements SearchEverywhereContrib
                               @NotNull Processor<? super CodereadClient.Artifact> consumer) {
         String kw = pattern.trim();
         if (kw.isEmpty()) return;
+        // 主要数据源由设置页首选项决定（默认首选项为空 → 不搜索，与工具主面板一致）
+        List<String> primary = SearchPanel.getExtraDefaultRepos();
+        if (primary.isEmpty()) return;
         try {
-            List<CodereadClient.Artifact> results = CodereadClient.search(kw, false);
+            List<CodereadClient.Artifact> results = new ArrayList<>();
+            for (String url : primary) {
+                String kind = SearchPanel.classifyKind(url);
+                if ("coderead".equals(kind)) {
+                    results = CodereadClient.search(kw, false);
+                    break;
+                } else if ("central".equals(kind)) {
+                    results = CentralClient.search(kw);
+                    break;
+                }
+            }
             for (CodereadClient.Artifact a : results) {
                 if (progressIndicator.isCanceled()) break;
                 if (!consumer.process(a)) break;
@@ -116,16 +128,6 @@ public class MavenSearchEverywhereContributor implements SearchEverywhereContrib
                 return label;
             }
         };
-    }
-
-    @Nullable
-    @Override
-    public Object getDataForItem(@NotNull CodereadClient.Artifact element, @NotNull String dataId) {
-        return null;
-    }
-
-    @Override
-    public void dispose() {
     }
 
     /** Factory：由 plugin.xml 的 searchEverywhereContributor 扩展点实例化。 */
