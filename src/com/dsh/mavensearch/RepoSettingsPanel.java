@@ -2,8 +2,13 @@ package com.dsh.mavensearch;
 
 import com.intellij.openapi.application.ApplicationManager;
 
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -23,7 +28,8 @@ import java.util.List;
 
 /**
  * 仓库设置页（工具内二级页面）：
- * 仓库地址以表格展示（每行一个地址，点击单元格可直接修改，点击其它区域自动保存）；
+ * 首选项（额外默认仓库地址、打开工具是否自动测速）+ 仓库地址表格
+ * （每行一个地址，点击单元格可直接修改，点击其它区域自动保存）；
  * 每行带延迟测试按钮（按钮内显示延迟时间，点击重新测试）；保存后自动进行延迟测试。
  */
 public class RepoSettingsPanel extends JPanel {
@@ -50,6 +56,17 @@ public class RepoSettingsPanel extends JPanel {
     private final Runnable onSave;
     private boolean dirty = false;
 
+    // ---- 首选项 ----
+    private final JTextField extraField = new JTextField(28);
+    private final DefaultTableModel extraModel = new DefaultTableModel(new Object[]{"额外默认仓库地址"}, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+    private final JTable extraTable = new JTable(extraModel);
+    private final JCheckBox autoTestBox = new JCheckBox("打开工具窗口时自动测试仓库延迟");
+
     /** 是否有未保存的修改（添加/删除/修改过仓库地址）。 */
     public boolean isDirty() {
         return dirty;
@@ -59,11 +76,65 @@ public class RepoSettingsPanel extends JPanel {
         super(new BorderLayout(6, 6));
         this.onSave = onSave;
 
-        // ---- 顶部：标题 + 添加 ----
-        JPanel north = new JPanel(new BorderLayout(0, 4));
-        JLabel title = new JLabel("Maven 仓库设置");
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 14f));
-        north.add(title, BorderLayout.NORTH);
+        // ---- 顶部：首选项 + 标题 + 添加 ----
+        JPanel north = new JPanel();
+        north.setLayout(new BoxLayout(north, BoxLayout.Y_AXIS));
+
+        // 首选项：额外默认仓库地址 + 自动测速开关
+        JPanel pref = new JPanel();
+        pref.setLayout(new BoxLayout(pref, BoxLayout.Y_AXIS));
+        pref.setBorder(BorderFactory.createTitledBorder("首选项"));
+        JLabel prefHint = new JLabel("额外默认仓库地址：每次打开工具时自动加载（不随表格恢复默认而丢失）");
+        prefHint.setFont(prefHint.getFont().deriveFont(Font.PLAIN, 11f));
+        pref.add(prefHint);
+        JPanel extraRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        extraRow.add(new JLabel("仓库地址:"));
+        extraRow.add(extraField);
+        JButton addExtraBtn = new JButton("添加");
+        addExtraBtn.addActionListener(e -> {
+            String u = extraField.getText().trim();
+            if (u.isEmpty()) return;
+            if (!u.startsWith("http://") && !u.startsWith("https://")) u = "https://" + u;
+            for (int i = 0; i < extraModel.getRowCount(); i++) {
+                if (u.equals(extraModel.getValueAt(i, 0))) {
+                    extraField.setText("");
+                    return; // 已存在，忽略重复
+                }
+            }
+            extraModel.addRow(new Object[]{u});
+            extraField.setText("");
+            dirty = true;
+        });
+        extraRow.add(addExtraBtn);
+        extraRow.add(new JLabel("  （独立于下方仓库表格，自动测速后仍按延迟择优）"));
+        pref.add(extraRow);
+        extraTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        extraTable.setRowHeight(24);
+        extraTable.getColumnModel().getColumn(0).setPreferredWidth(560);
+        JPanel extraListRow = new JPanel(new BorderLayout(4, 0));
+        extraListRow.add(new JScrollPane(extraTable), BorderLayout.CENTER);
+        JButton delExtraBtn = new JButton("删除所选");
+        delExtraBtn.addActionListener(e -> {
+            int r = extraTable.getSelectedRow();
+            if (r >= 0) {
+                extraModel.removeRow(r);
+                dirty = true;
+            }
+        });
+        extraListRow.add(delExtraBtn, BorderLayout.EAST);
+        // 额外仓库列表：固定高度 3 行
+        extraListRow.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, 96));
+        pref.add(extraListRow);
+        autoTestBox.setSelected(SearchPanel.isAutoTestEnabled());
+        autoTestBox.addActionListener(e -> dirty = true);
+        pref.add(Box.createVerticalStrut(2));
+        pref.add(autoTestBox);
+        north.add(pref);
+        north.add(Box.createVerticalStrut(6));
+
+        JLabel title = new JLabel("仓库地址表（当前生效，保存后覆盖默认）");
+        title.setFont(title.getFont().deriveFont(Font.BOLD, 13f));
+        north.add(title);
         JPanel addRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         addRow.add(new JLabel("仓库地址:"));
         addRow.add(urlField);
@@ -78,7 +149,7 @@ public class RepoSettingsPanel extends JPanel {
         });
         addRow.add(addBtn);
         addRow.add(new JLabel("  （点击地址单元格可直接修改，点击其它区域自动保存）"));
-        north.add(addRow, BorderLayout.SOUTH);
+        north.add(addRow);
         add(north, BorderLayout.NORTH);
 
         // ---- 中部：仓库地址表格 ----
@@ -148,6 +219,21 @@ public class RepoSettingsPanel extends JPanel {
             if (v != null) out.add(String.valueOf(v).trim());
         }
         return out;
+    }
+
+    /** 返回首选项中的额外默认仓库地址列表。 */
+    public List<String> getExtraDefaultRepos() {
+        List<String> out = new ArrayList<>();
+        for (int i = 0; i < extraModel.getRowCount(); i++) {
+            Object v = extraModel.getValueAt(i, 0);
+            if (v != null) out.add(String.valueOf(v).trim());
+        }
+        return out;
+    }
+
+    /** 返回首选项：打开工具时是否自动测速。 */
+    public boolean isAutoTestEnabled() {
+        return autoTestBox.isSelected();
     }
 
     /** 重新测试指定行的仓库延迟并更新按钮。 */

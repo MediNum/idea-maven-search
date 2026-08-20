@@ -53,6 +53,10 @@ public class SearchPanel extends JPanel {
     private static final Logger LOG = Logger.getInstance("com.dsh.mavensearch.SearchPanel");
     private static final String KEY_REPOS = "com.dsh.maven-search.repos";
     private static final String KEY_HISTORY = "com.dsh.maven-search.history";
+    /** 首选项：额外默认仓库地址（每次启动自动加载，持久化）。 */
+    private static final String KEY_EXTRA_REPOS = "com.dsh.maven-search.extraRepos";
+    /** 首选项：打开工具窗口时是否自动测试仓库延迟（持久化，默认开）。 */
+    private static final String KEY_AUTO_TEST = "com.dsh.maven-search.autoTest";
     /** 搜索下拉框最底部的"清除历史"项标识。 */
     private static final String SENTINEL = "— 清除历史记录 —";
 
@@ -409,7 +413,13 @@ public class SearchPanel extends JPanel {
         });
 
         loadRepos();
-        probeRepositories(); // 第一次打开自动测试延迟
+        // 首选项：是否在打开工具窗口时自动测试仓库延迟（默认开）
+        if (isAutoTestEnabled()) {
+            probeRepositories(); // 打开工具自动测试延迟
+        } else {
+            repoStatus.setText("自动测速已关闭（⚙ 设置中开启）");
+            activeRepo = searchRepo;
+        }
     }
 
     // ---------------- 仓库管理与延迟测试 ----------------
@@ -440,6 +450,10 @@ public class SearchPanel extends JPanel {
             urls.add(0, "http://mvn.coderead.cn");
             urls.add(1, "https://search.maven.org");
         }
+        // 合并首选项中的额外默认仓库地址（去重，每次启动自动加载）
+        for (String u : getExtraDefaultRepos()) {
+            if (!u.isEmpty() && !urls.contains(u)) urls.add(u);
+        }
         for (String u : urls) {
             String kind = classifyKind(u);
             repos.add(new Repo("r-" + repos.size(), displayName(u, kind), kind, u));
@@ -468,15 +482,22 @@ public class SearchPanel extends JPanel {
     private void openSettingsPage() {
         settingsCard.removeAll();
         settingsPage = new RepoSettingsPanel(repos, () -> {
-            saveUserRepos(settingsPage.getRepoUrls());
-            loadRepos();
-            probeRepositories();
+            applySettings(); // 保存首选项 + 仓库列表 + 重新加载仓库
             // 保存后留在设置页（自动延迟测试在设置页内完成），由 ⚙ / ← 返回
         });
         settingsCard.add(settingsPage, BorderLayout.CENTER);
         settingsCard.revalidate();
         settingsCard.repaint();
         showCard("settings");
+    }
+
+    /** 应用设置页的全部修改：首选项（额外默认仓库 + 自动测速开关）+ 仓库地址列表。 */
+    private void applySettings() {
+        saveExtraDefaultRepos(settingsPage.getExtraDefaultRepos());
+        setAutoTestEnabled(settingsPage.isAutoTestEnabled());
+        saveUserRepos(settingsPage.getRepoUrls());
+        loadRepos();
+        probeRepositories();
     }
 
     private void showCard(String name) {
@@ -490,9 +511,7 @@ public class SearchPanel extends JPanel {
             int r = Messages.showYesNoCancelDialog(this,
                     "仓库设置已修改，是否保存？", "Maven 仓库设置", Messages.getQuestionIcon());
             if (r == Messages.YES) {
-                saveUserRepos(settingsPage.getRepoUrls());
-                loadRepos();
-                probeRepositories();
+                applySettings();
                 showCard("search");
             } else if (r == Messages.NO) {
                 showCard("search");
@@ -510,6 +529,41 @@ public class SearchPanel extends JPanel {
             sb.append(u);
         }
         PropertiesComponent.getInstance().setValue(KEY_REPOS, sb.toString());
+    }
+
+    // ---------------- 首选项（额外默认仓库 / 自动延迟测试） ----------------
+
+    /** 读取首选项：额外默认仓库地址（持久化，\n 分隔）。 */
+    static List<String> getExtraDefaultRepos() {
+        List<String> out = new ArrayList<>();
+        String saved = PropertiesComponent.getInstance().getValue(KEY_EXTRA_REPOS, "");
+        if (saved != null) {
+            for (String line : saved.split("\\n")) {
+                String u = line.trim();
+                if (!u.isEmpty()) out.add(u);
+            }
+        }
+        return out;
+    }
+
+    /** 保存首选项：额外默认仓库地址列表。 */
+    static void saveExtraDefaultRepos(List<String> urls) {
+        StringBuilder sb = new StringBuilder();
+        for (String u : urls) {
+            if (sb.length() > 0) sb.append('\n');
+            sb.append(u);
+        }
+        PropertiesComponent.getInstance().setValue(KEY_EXTRA_REPOS, sb.toString());
+    }
+
+    /** 读取首选项：打开工具窗口时是否自动测试仓库延迟（默认开）。 */
+    static boolean isAutoTestEnabled() {
+        return PropertiesComponent.getInstance().getBoolean(KEY_AUTO_TEST, true);
+    }
+
+    /** 保存首选项：打开工具窗口时是否自动测试仓库延迟。 */
+    static void setAutoTestEnabled(boolean enabled) {
+        PropertiesComponent.getInstance().setValue(KEY_AUTO_TEST, enabled);
     }
 
     // ---------------- 搜索历史 ----------------
