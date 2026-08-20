@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.dsh.maven-search</id>
     <name>Maven Search (coderead)</name>
-    <vendor url="https://mvn.coderead.cn">DSH</vendor>
+    <vendor email="hc7200@126.com" url="https://github.com/num110/idea-maven-search">HC</vendor>
     <version>1.5.6</version>
     <description><![CDATA[
         <h3>Maven Search</h3>

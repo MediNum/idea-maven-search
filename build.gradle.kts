@@ -17,6 +17,14 @@ java {
     }
 }
 
+// 源码与资源目录沿用本地布局（src/ 与 META-INF/），而非 Gradle 默认的 src/main/*
+sourceSets {
+    main {
+        java.setSrcDirs(listOf("src"))
+        resources.setSrcDirs(listOf("META-INF"))
+    }
+}
+
 intellij {
     version.set("2026.1")
     type.set("IC") // IntelliJ IDEA Community
@@ -29,5 +37,10 @@ tasks {
     }
     buildSearchableOptions {
         enabled = false
+    }
+    // JetBrains Marketplace 发布：gradle publishPlugin（token 从环境变量读取，勿提交）
+    publishPlugin {
+        token.set(System.getenv("JB_MARKETPLACE_TOKEN") ?: "")
+        channels.set(listOf("default"))
     }
 }
