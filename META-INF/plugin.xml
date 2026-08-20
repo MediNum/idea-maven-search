@@ -2,7 +2,7 @@
     <id>com.dsh.maven-search</id>
     <name>Maven Search (coderead)</name>
     <vendor email="hc7200@126.com" url="https://github.com/num110/idea-maven-search">HC</vendor>
-    <version>1.5.10</version>
+    <version>1.5.11</version>
     <description><![CDATA[
         Maven Search is a Maven Central artifact search tool for IntelliJ IDEA, working the same way as the official Maven Search plugin. It searches Maven Central via the fast domestic mirror
         <a href="https://mvn.coderead.cn">mvn.coderead.cn</a> with millisecond-level response.
@@ -16,6 +16,7 @@
         </ul>
     ]]></description>
     <change-notes><![CDATA[
+        <p>1.5.11 界面调整：设置页布局交换 —— 仓库地址表移至上方（操作按钮并入表格下方），首选项区移到仓库地址表下方。</p>
         <p>1.5.10 界面美化：设置页首选项区与仓库地址表统一风格 —— 额外默认仓库地址改用与主表一致的可编辑表格（点击单元格直接修改、自动保存），每行带延迟测试按钮、支持测试全部延迟；自动测速开关并入首选项操作行。</p>
         <p>1.5.9 新增功能：设置页新增"首选项"—— 可添加额外默认仓库地址（每次打开工具自动加载，不随恢复默认丢失）；可开关"打开工具窗口时自动测试仓库延迟"（默认开，关闭后打开工具不测速、直接使用默认数据源）。</p>
         <p>1.5.8 新增功能：集成到 IDEA Search Everywhere（双击 Shift）—— 新增 "Maven" Tab，输入关键词实时搜索 Maven 组件，回车直接打开工具窗口并搜索该组件。</p>

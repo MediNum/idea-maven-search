@@ -39,6 +39,8 @@ repositories** with **automatic latency-based selection**.
 
 ## Changelog
 
+- **1.5.11** UI: settings layout swapped — repository table on top (action buttons
+  merged below the table), preferences moved below the repository table
 - **1.5.10** UI polish: settings preferences restyled like the repository table —
   extra default repos use the same editable table with per-row latency buttons
 - **1.5.9** New: settings page now has "preferences" — add extra default repository

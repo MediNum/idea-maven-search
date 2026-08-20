@@ -85,43 +85,9 @@ public class RepoSettingsPanel extends JPanel {
         super(new BorderLayout(6, 6));
         this.onSave = onSave;
 
-        // ==================== 顶部：首选项 + 主仓库表标题与添加行 ====================
+        // ==================== 顶部：仓库地址表标题与添加行 ====================
         JPanel north = new JPanel();
         north.setLayout(new BoxLayout(north, BoxLayout.Y_AXIS));
-
-        // ---- 首选项区（与仓库地址表同风格） ----
-        north.add(sectionTitle("首选项"));
-        JLabel extraHint = new JLabel("额外默认仓库地址：每次打开工具时自动加载（不随“恢复默认”丢失）");
-        extraHint.setFont(extraHint.getFont().deriveFont(Font.PLAIN, 11f));
-        north.add(extraHint);
-        north.add(Box.createVerticalStrut(2));
-        JPanel extraAddRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-        extraAddRow.add(new JLabel("仓库地址:"));
-        extraAddRow.add(extraField);
-        JButton addExtraBtn = new JButton("添加");
-        addExtraBtn.addActionListener(e -> addUrl(extraModel, extraField));
-        extraAddRow.add(addExtraBtn);
-        extraAddRow.add(new JLabel("  （点击地址单元格可直接修改，点击其它区域自动保存）"));
-        north.add(extraAddRow);
-        // 额外默认仓库表格：可编辑 + 延迟测试按钮（与主表一致）
-        configureTable(extraTable, extraModel);
-        JPanel extraTableWrap = new JPanel(new BorderLayout());
-        extraTableWrap.add(new JScrollPane(extraTable), BorderLayout.CENTER);
-        extraTableWrap.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, 96));
-        north.add(extraTableWrap);
-        // 首选项操作行
-        JPanel extraBtns = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
-        JButton delExtraBtn = new JButton("删除所选");
-        delExtraBtn.addActionListener(e -> deleteSelected(extraTable, extraModel));
-        extraBtns.add(delExtraBtn);
-        JButton testExtraBtn = new JButton("测试全部延迟");
-        testExtraBtn.addActionListener(e -> testAll(extraModel));
-        extraBtns.add(testExtraBtn);
-        extraBtns.add(autoTestBox);
-        north.add(extraBtns);
-        autoTestBox.setSelected(SearchPanel.isAutoTestEnabled());
-        autoTestBox.addActionListener(e -> dirty = true);
-        north.add(Box.createVerticalStrut(10));
 
         // ---- 主仓库地址表 ----
         north.add(sectionTitle("仓库地址表（当前生效，保存后覆盖默认）"));
@@ -135,33 +101,70 @@ public class RepoSettingsPanel extends JPanel {
         north.add(addRow);
         add(north, BorderLayout.NORTH);
 
-        // ==================== 中部：主仓库地址表格 ====================
+        // ==================== 中部：主仓库地址表格 + 操作按钮 ====================
         for (SearchPanel.Repo r : currentRepos) model.addRow(new Object[]{r.baseUrl, "测试"});
         configureTable(table, model);
-        add(new JScrollPane(table), BorderLayout.CENTER);
-
-        // ==================== 底部：操作按钮 ====================
-        JPanel south = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+        JPanel center = new JPanel(new BorderLayout(0, 4));
+        center.add(new JScrollPane(table), BorderLayout.CENTER);
+        // 主表操作按钮行
+        JPanel mainBtns = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
         JButton delBtn = new JButton("删除所选");
         delBtn.addActionListener(e -> deleteSelected(table, model));
-        south.add(delBtn);
+        mainBtns.add(delBtn);
         JButton restoreBtn = new JButton("恢复默认");
         restoreBtn.addActionListener(e -> {
             model.setRowCount(0);
             for (String d : SearchPanel.DEFAULT_REPOS) model.addRow(new Object[]{d, "测试"});
             dirty = true;
         });
-        south.add(restoreBtn);
+        mainBtns.add(restoreBtn);
         JButton testAllBtn = new JButton("测试全部延迟");
         testAllBtn.addActionListener(e -> testAll(model));
-        south.add(testAllBtn);
+        mainBtns.add(testAllBtn);
         JButton saveBtn = new JButton("保存");
         saveBtn.addActionListener(e -> {
             if (onSave != null) onSave.run();
             dirty = false;
             testAll(model); // 保存仓库地址后自动进行延迟测试，按钮内显示延迟时间
         });
-        south.add(saveBtn);
+        mainBtns.add(saveBtn);
+        center.add(mainBtns, BorderLayout.SOUTH);
+        add(center, BorderLayout.CENTER);
+
+        // ==================== 底部：首选项区（仓库地址表下方） ====================
+        JPanel south = new JPanel();
+        south.setLayout(new BoxLayout(south, BoxLayout.Y_AXIS));
+        south.add(sectionTitle("首选项"));
+        JLabel extraHint = new JLabel("额外默认仓库地址：每次打开工具时自动加载（不随“恢复默认”丢失）");
+        extraHint.setFont(extraHint.getFont().deriveFont(Font.PLAIN, 11f));
+        south.add(extraHint);
+        south.add(Box.createVerticalStrut(2));
+        JPanel extraAddRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        extraAddRow.add(new JLabel("仓库地址:"));
+        extraAddRow.add(extraField);
+        JButton addExtraBtn = new JButton("添加");
+        addExtraBtn.addActionListener(e -> addUrl(extraModel, extraField));
+        extraAddRow.add(addExtraBtn);
+        extraAddRow.add(new JLabel("  （点击地址单元格可直接修改，点击其它区域自动保存）"));
+        south.add(extraAddRow);
+        // 额外默认仓库表格：可编辑 + 延迟测试按钮（与主表一致）
+        configureTable(extraTable, extraModel);
+        JPanel extraTableWrap = new JPanel(new BorderLayout());
+        extraTableWrap.add(new JScrollPane(extraTable), BorderLayout.CENTER);
+        extraTableWrap.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, 96));
+        south.add(extraTableWrap);
+        // 首选项操作行
+        JPanel extraBtns = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+        JButton delExtraBtn = new JButton("删除所选");
+        delExtraBtn.addActionListener(e -> deleteSelected(extraTable, extraModel));
+        extraBtns.add(delExtraBtn);
+        JButton testExtraBtn = new JButton("测试全部延迟");
+        testExtraBtn.addActionListener(e -> testAll(extraModel));
+        extraBtns.add(testExtraBtn);
+        extraBtns.add(autoTestBox);
+        south.add(extraBtns);
+        autoTestBox.setSelected(SearchPanel.isAutoTestEnabled());
+        autoTestBox.addActionListener(e -> dirty = true);
         add(south, BorderLayout.SOUTH);
 
         // 打开设置页自动测试全部延迟（首选项表 + 主表，按钮内显示）
