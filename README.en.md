@@ -11,6 +11,9 @@ repositories** with **automatic latency-based selection**.
 
 - **Tools → Maven Search** opens the search panel; type-to-search (results appear
   automatically 350ms after you stop typing)
+- **Search Everywhere integration**: press Shift twice to open IDEA global search,
+  switch to the **Maven** tab, type a keyword to search artifacts live, and press
+  Enter to open the tool window and search that artifact
 - **Multiple repositories**: mvn.coderead.cn (default, effective immediately on open)
   + Maven Central + custom repositories; auto-tests latency and picks the fastest
 - **Search history**: click the search box to see past queries (newest first,
@@ -34,6 +37,8 @@ repositories** with **automatic latency-based selection**.
 
 ## Changelog
 
+- **1.5.8** New: integrated into IDEA Search Everywhere (double Shift) — a new
+  "Maven" tab searches artifacts live; Enter opens the tool window and searches
 - **1.5.7** Fix plugin description format to pass JetBrains Marketplace validation
 - **1.5.6** Default data source fixed to mvn.coderead.cn (effective immediately;
   latency test still auto-runs and may switch to a faster repository)

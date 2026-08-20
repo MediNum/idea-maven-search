@@ -523,6 +523,18 @@ public class SearchPanel extends JPanel {
         searchCombo.getEditor().setItem(s == null ? "" : s);
     }
 
+    /**
+     * Search Everywhere（双击 Shift）集成入口：填入关键词并立即触发搜索。
+     * 若正在延迟测试，会显示等待提示，测速结束后自动搜索。
+     */
+    public void searchFromEverywhere(String keyword) {
+        setSearchText(keyword == null ? "" : keyword.trim());
+        searchSeq++;
+        searchPending = true;
+        showCard("search");
+        requestSearch();
+    }
+
     /** 从持久化配置加载历史查询。 */
     private void loadHistory() {
         String saved = PropertiesComponent.getInstance().getValue(KEY_HISTORY, "");
