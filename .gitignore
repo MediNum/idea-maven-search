@@ -1,0 +1,14 @@
+# ---- 构建产物 ----
+out/
+dist/
+MavenSearch-*.jar
+
+# ---- IDE ----
+.idea/
+*.iml
+.vscode/
+
+# ---- 系统 ----
+Thumbs.db
+.DS_Store
+*.log
