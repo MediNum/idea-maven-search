@@ -102,7 +102,7 @@ IDEA Maven Search 同用法（Tools → Maven Search）的 Maven 组件搜索工
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-构建脚本直接用本机安装的 IDEA（`D:\ProgramInstall\IntelliJ IDEA 2026.1.3`，实际平台
+构建脚本直接用本机安装的 IDEA（`IntelliJ IDEA 2026.1.3`，实际平台
 build 262.8665 / 2026.2）自带的平台 jar（lib\*）与其 JBR（Java 25）编译，再用 JDK 的
 jar.exe 打包，全程零下载。产出 `MavenSearch-1.5.6.jar`。
 
