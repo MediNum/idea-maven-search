@@ -101,13 +101,14 @@ public class MavenSearchEverywhereContributor implements SearchEverywhereContrib
         ToolWindow tw = ToolWindowManager.getInstance(project).getToolWindow(MavenSearchAction.TOOL_WINDOW_ID);
         if (tw == null) return false;
         tw.activate(null);
-        // 工具窗口首次激活后内容才由 Factory 创建，延迟到 EDT 再填充搜索词
-        final String keyword = selected.groupId + ":" + selected.artifactId;
+        // 工具窗口首次激活后内容才由 Factory 创建，延迟到 EDT 再打开。
+        // 直接进入该词条的二级页面（版本列表 + 复制 Maven XML / 下载），
+        // 而不是一级搜索结果页；搜索框保留用户输入的原关键词（如 "hutool"）。
         SwingUtilities.invokeLater(() -> {
             if (project.isDisposed() || tw.isDisposed()) return;
             Content content = tw.getContentManager().getContent(0);
             if (content != null && content.getComponent() instanceof SearchPanel) {
-                ((SearchPanel) content.getComponent()).searchFromEverywhere(keyword);
+                ((SearchPanel) content.getComponent()).openFromEverywhere(selected, searchText);
             }
         });
         return true;

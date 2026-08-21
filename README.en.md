@@ -39,7 +39,7 @@ repositories** with **preferences-driven primary data sources**.
 ## Install
 
 1. `File → Settings → Plugins` (or `Ctrl+Alt+S`)
-2. Gear ⚙ → **Install Plugin from Disk...** → select `MavenSearch-2.0.0.jar`
+2. Gear ⚙ → **Install Plugin from Disk...** → select `MavenSearch-2.1.0.jar`
 3. Restart IDEA, open any project → `Tools` → **Maven Search**
 
 > ⚠️ IntelliJ 2026.2's "Install Plugin from Disk" only loads files with a **`.jar`**
@@ -47,6 +47,16 @@ repositories** with **preferences-driven primary data sources**.
 
 ## Changelog
 
+- **2.1.0** Update (consolidating 2.0.x fixes and improvements):
+  - The home page hint now mentions: **press Shift twice to open Search Everywhere
+    for quick search**; clicking a result goes straight to the artifact detail page
+  - Clicking a result in Search Everywhere now opens Maven Search **directly on
+    that artifact's detail page** (version list + copy Maven XML / download)
+    instead of staying on the first-level search results; the search box keeps the
+    user's original keyword
+  - Fixed "正在搜索…" stuck after the first Search Everywhere jump (stale responses
+    now release the search lock and auto-re-run the pending search)
+  - Fixed dropdown history cross-selection and result-to-detail navigation issues
 - **2.0.0** Major release (consolidating all 1.5.x features and fixes):
   - Data source redesign: primary data sources are fully determined by the settings
     preferences (empty by default → none); the status bar and preferences stay in
@@ -72,7 +82,7 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
 Compiles against the locally installed IDEA jars + its JBR (zero download),
-producing `MavenSearch-2.0.0.jar`.
+producing `MavenSearch-2.1.0.jar`.
 CI (GitHub Actions): push a `v*` tag to build and create a Release.
 
 ## Technical notes

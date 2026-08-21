@@ -2,7 +2,7 @@
     <id>com.dsh.maven-search</id>
     <name>Maven Search (coderead)</name>
     <vendor email="hc7200@126.com" url="https://github.com/num110/idea-maven-search">HC</vendor>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
     <description><![CDATA[
         Maven Search is a Maven Central artifact search tool for IntelliJ IDEA, working the same way as the official Maven Search plugin. It searches Maven Central via the fast domestic mirror
         <a href="https://mvn.coderead.cn">mvn.coderead.cn</a> with millisecond-level response.
@@ -16,11 +16,16 @@
         </ul>
     ]]></description>
     <change-notes><![CDATA[
+        <p><b>2.1.0 更新</b>（合并 2.0.x 修复与优化）：</p>
+        <p>· 首页使用方式新增提示：<b>双击 Shift 打开 Search Everywhere 快速搜索</b>，点击结果直达版本页。</p>
+        <p>· Search Everywhere 点击结果后 Maven Search 直接进入该词条的二级页面（版本列表 + 复制 Maven XML / 下载），不再停留在一级搜索结果页；搜索框保留用户输入的原关键词。</p>
+        <p>· 修复首次从 Search Everywhere 跳转后一直显示"正在搜索…"的问题（过期响应释放搜索锁并自动补发）。</p>
+        <p>· 修复下拉历史串项、搜索结果无法进入二级页等若干问题。</p>
         <p><b>2.0.0 主要版本</b>（整合 1.5.x 全部功能与修复）：</p>
         <p>· 数据源体系重构：主要数据源完全由设置页首选项决定（默认首选项为空 → 主要数据源也为空），工具右下状态栏与首选项同步挂钩；添加主要数据源后自动切换并测延迟（状态栏"✅ 数据源: xxx (n ms)"）；去除不可搜索的镜像仓库，搜索源自动回退 Maven Central。</p>
         <p>· 设置页升级：仓库地址表 + 首选项（主要数据源）等高布局、点击 + 启用为首选 / − 删除、点击任意区域自动保存、每行延迟测试按钮；默认数据源 mvn.coderead.cn 不再内置。</p>
         <p>· Search Everywhere（双击 Shift）集成：新增 "Maven" Tab 实时搜索组件，回车打开工具窗口并搜索。</p>
-        <p>· 搜索体验：历史记录下拉（最新在前、去重、上限 20 条、持久化）、"清除历史"、输入即搜索；修复下拉历史串项、搜索结果无法进入二级页等若干问题。</p>
+        <p>· 搜索体验：历史记录下拉（最新在前、去重、上限 20 条、持久化）、"清除历史"、输入即搜索。</p>
         <p>· 代码精简：移除旧版轮询测速等死代码；纯 Java 无第三方依赖。</p>
     ]]></change-notes>
     <idea-version since-build="261.0"/>

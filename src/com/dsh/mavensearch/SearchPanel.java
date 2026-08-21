@@ -75,6 +75,7 @@ public class SearchPanel extends JPanel {
                 + "<div style='font-size:16px;font-weight:bold;margin-bottom:10px;color:#707070'>Maven Search 使用方式 "
                 + "<span style='font-size:12px;font-weight:normal;color:#909090'>v" + pluginVersion() + "</span></div>"
                 + "输入关键词搜索 Maven 组件（自动选择延迟最低的仓库）<br/>"
+                + "· <b>双击 Shift 打开 Search Everywhere 快速搜索</b>，点击结果直达版本页<br/>"
                 + "· 搜索框默认为空，点击下拉查看历史查询记录，下拉底部可清除历史<br/>"
                 + "· 输入 artifactId / groupId，停止输入 350ms 自动搜索<br/>"
                 + "· 点击结果进入版本页，双击版本自动复制 Maven XML（弹窗提示）<br/>"
@@ -787,7 +788,13 @@ public class SearchPanel extends JPanel {
             try {
                 final List<CodereadClient.Artifact> list = searchWith(src, kw, cls);
                 SwingUtilities.invokeLater(() -> {
-                    if (seq != searchSeq) return; // 过期响应，丢弃
+                    if (seq != searchSeq) {
+                        // 过期响应：必须释放搜索锁并补发最新请求，
+                        // 否则 searchBusy 恒为 true，界面永远卡在"正在搜索…"
+                        searchBusy = false;
+                        if (searchPending) startSearch();
+                        return;
+                    }
                     lastQuery = kw; // 记录本次成功的查询，供点击结果时写入历史
                     resultsModel.clear();
                     for (CodereadClient.Artifact a : list) resultsModel.addElement(a);
@@ -807,7 +814,12 @@ public class SearchPanel extends JPanel {
                 });
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
-                    if (seq != searchSeq) return;
+                    if (seq != searchSeq) {
+                        // 过期响应：同样释放搜索锁，避免卡死
+                        searchBusy = false;
+                        if (searchPending) startSearch();
+                        return;
+                    }
                     status.setText("搜索失败: " + ex.getMessage());
                     searchBusy = false;
                     if (searchPending) startSearch();
@@ -822,6 +834,22 @@ public class SearchPanel extends JPanel {
     }
 
     // ---------------- 版本详情 ----------------
+
+    /**
+     * Search Everywhere（双击 Shift）集成入口：点击结果后直接进入该词条的
+     * 二级页面（版本列表 + 复制 Maven XML / 下载），而不是一级搜索结果页。
+     * @param a 用户在 Search Everywhere 中点击的词条
+     * @param keyword 用户在 Search Everywhere 中输入的原始关键词
+     */
+    public void openFromEverywhere(CodereadClient.Artifact a, String keyword) {
+        if (a == null) return;
+        // 记录该关键词为本次查询（点击结果时写入历史），并填入搜索框
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            lastQuery = keyword.trim();
+            setSearchText(lastQuery);
+        }
+        openArtifact(a);
+    }
 
     private void openArtifact(CodereadClient.Artifact a) {
         current = a;

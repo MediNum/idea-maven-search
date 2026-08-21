@@ -31,7 +31,7 @@
 ## 安装
 
 1. `File → Settings → Plugins`（`Ctrl+Alt+S`）
-2. ⚙ → **Install Plugin from Disk...** 选择 `MavenSearch-2.0.0.jar`
+2. ⚙ → **Install Plugin from Disk...** 选择 `MavenSearch-2.1.0.jar`
 3. 重启 IDEA，打开任意项目 → `Tools` → **Maven Search**
 
 > ⚠️ IDEA 2026.2 的 "Install Plugin from Disk" 只认 `.jar` 后缀
@@ -39,6 +39,15 @@
 
 ## 更新记录
 
+- **2.1.0** 更新（合并 2.0.x 修复与优化）：
+  - 首页使用方式新增提示：**双击 Shift 打开 Search Everywhere 快速搜索**，
+    点击结果直达版本页
+  - Search Everywhere 点击结果后 Maven Search **直接进入该词条的二级页面**
+    （版本列表 + 复制 Maven XML / 下载），不再停留在一级搜索结果页；
+    搜索框保留用户输入的原关键词
+  - 修复首次从 Search Everywhere 跳转后一直显示"正在搜索…"的问题
+    （过期响应释放搜索锁并自动补发）
+  - 修复下拉历史串项、搜索结果无法进入二级页等若干问题
 - **2.0.0** 主要版本（整合 1.5.x 全部功能与修复）：
   - 数据源体系重构：主要数据源完全由设置页首选项决定（默认首选项为空 → 主要
     数据源也为空）；工具右下状态栏与首选项同步挂钩；添加主要数据源后自动切换
@@ -59,7 +68,7 @@
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-用本机 IDEA 自带 jar + JBR 编译，零下载，产出 `MavenSearch-2.0.0.jar`。
+用本机 IDEA 自带 jar + JBR 编译，零下载，产出 `MavenSearch-2.1.0.jar`。
 CI（GitHub Actions）：推送 `v*` tag 自动构建并生成 Release。
 
 ## 技术说明
