@@ -2,7 +2,7 @@
     <id>com.dsh.maven-search</id>
     <name>Maven Search (coderead)</name>
     <vendor email="hc7200@126.com" url="https://github.com/num110/idea-maven-search">HC</vendor>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
     <description><![CDATA[
         Maven Search is a Maven Central artifact search tool for IntelliJ IDEA, working the same way as the official Maven Search plugin. It searches Maven Central via the fast domestic mirror
         <a href="https://mvn.coderead.cn">mvn.coderead.cn</a> with millisecond-level response.
@@ -16,6 +16,7 @@
         </ul>
     ]]></description>
     <change-notes><![CDATA[
+        <p><b>2.2.0 更新</b>：支持 IDEA 2021~2026 全版本 —— since-build 降至 211.0，字节码目标 Java 11（JBR 11 兼容）；Search Everywhere 集成同时兼容新旧两套 fetchElements API（2023.2 前后签名不同）。</p>
         <p><b>2.1.0 更新</b>（合并 2.0.x 修复与优化）：</p>
         <p>· 首页使用方式新增提示：<b>双击 Shift 打开 Search Everywhere 快速搜索</b>，点击结果直达版本页。</p>
         <p>· Search Everywhere 点击结果后 Maven Search 直接进入该词条的二级页面（版本列表 + 复制 Maven XML / 下载），不再停留在一级搜索结果页；搜索框保留用户输入的原关键词。</p>
@@ -28,7 +29,7 @@
         <p>· 搜索体验：历史记录下拉（最新在前、去重、上限 20 条、持久化）、"清除历史"、输入即搜索。</p>
         <p>· 代码精简：移除旧版轮询测速等死代码；纯 Java 无第三方依赖。</p>
     ]]></change-notes>
-    <idea-version since-build="261.0"/>
+    <idea-version since-build="211.0"/>
     <depends>com.intellij.modules.platform</depends>
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Maven Search" anchor="right" secondary="true" factoryClass="com.dsh.mavensearch.MavenSearchToolWindowFactory"/>

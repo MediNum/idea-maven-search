@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.dsh"
-version = "2.1.0"
+version = "2.2.0"
 
 repositories {
     mavenCentral()
@@ -15,6 +15,11 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
     }
+}
+
+// 兼容 IDEA 2021+（JBR 11）：字节码目标 Java 11，用 JDK 25 的 javac 以 --release 11 产出
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(11)
 }
 
 // 源码与资源目录沿用本地布局（src/ 与 META-INF/），而非 Gradle 默认的 src/main/*
@@ -36,8 +41,8 @@ intellij {
 
 tasks {
     patchPluginXml {
-        sinceBuild.set("261.0")
-        version.set("2.1.0")
+        sinceBuild.set("211.0")
+        version.set("2.2.0")
     }
     buildSearchableOptions {
         enabled = false

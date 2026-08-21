@@ -31,7 +31,7 @@
 ## 安装
 
 1. `File → Settings → Plugins`（`Ctrl+Alt+S`）
-2. ⚙ → **Install Plugin from Disk...** 选择 `MavenSearch-2.1.0.jar`
+2. ⚙ → **Install Plugin from Disk...** 选择 `MavenSearch-2.2.0.jar`
 3. 重启 IDEA，打开任意项目 → `Tools` → **Maven Search**
 
 > ⚠️ IDEA 2026.2 的 "Install Plugin from Disk" 只认 `.jar` 后缀
@@ -39,6 +39,9 @@
 
 ## 更新记录
 
+- **2.2.0** 更新：支持 **IDEA 2021~2026 全版本** —— since-build 降至 211.0，
+  字节码目标 Java 11（JBR 11 兼容）；Search Everywhere 集成同时兼容新旧两套
+  fetchElements API（2023.2 前后签名不同）
 - **2.1.0** 更新（合并 2.0.x 修复与优化）：
   - 首页使用方式新增提示：**双击 Shift 打开 Search Everywhere 快速搜索**，
     点击结果直达版本页
@@ -68,7 +71,7 @@
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-用本机 IDEA 自带 jar + JBR 编译，零下载，产出 `MavenSearch-2.1.0.jar`。
+用本机 IDEA 自带 jar + JBR 编译，零下载，产出 `MavenSearch-2.2.0.jar`。
 CI（GitHub Actions）：推送 `v*` tag 自动构建并生成 Release。
 
 ## 技术说明
@@ -78,4 +81,5 @@ CI（GitHub Actions）：推送 `v*` tag 自动构建并生成 Release。
   （Solr 搜索 + maven-metadata.xml）、自定义仓库（maven-metadata.xml）
 - 主要数据源由首选项决定：打开工具只测首选项仓库连接，按延迟自动切换；
   设置用 `PropertiesComponent` 持久化
-- 兼容性：`since-build="261.0"`，仅依赖 `com.intellij.modules.platform`
+- 兼容性：`since-build="211.0"`（IDEA 2021+），字节码 Java 11（JBR 11 兼容），
+  仅依赖 `com.intellij.modules.platform`

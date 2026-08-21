@@ -39,7 +39,7 @@ repositories** with **preferences-driven primary data sources**.
 ## Install
 
 1. `File → Settings → Plugins` (or `Ctrl+Alt+S`)
-2. Gear ⚙ → **Install Plugin from Disk...** → select `MavenSearch-2.1.0.jar`
+2. Gear ⚙ → **Install Plugin from Disk...** → select `MavenSearch-2.2.0.jar`
 3. Restart IDEA, open any project → `Tools` → **Maven Search**
 
 > ⚠️ IntelliJ 2026.2's "Install Plugin from Disk" only loads files with a **`.jar`**
@@ -47,6 +47,9 @@ repositories** with **preferences-driven primary data sources**.
 
 ## Changelog
 
+- **2.2.0** Update: supports **IDEA 2021~2026** — since-build lowered to 211.0,
+  bytecode targets Java 11 (JBR 11 compatible); Search Everywhere integration now
+  implements both fetchElements signatures (the API changed around 2023.2)
 - **2.1.0** Update (consolidating 2.0.x fixes and improvements):
   - The home page hint now mentions: **press Shift twice to open Search Everywhere
     for quick search**; clicking a result goes straight to the artifact detail page
@@ -82,7 +85,7 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
 Compiles against the locally installed IDEA jars + its JBR (zero download),
-producing `MavenSearch-2.1.0.jar`.
+producing `MavenSearch-2.2.0.jar`.
 CI (GitHub Actions): push a `v*` tag to build and create a Release.
 
 ## Technical notes
@@ -93,7 +96,8 @@ CI (GitHub Actions): push a `v*` tag to build and create a Release.
 - Primary data sources come from preferences: on open only preference repositories
   are connection-tested, then the lowest-latency one is auto-selected;
   settings persisted via `PropertiesComponent`
-- Compatibility: `since-build="261.0"`, only depends on `com.intellij.modules.platform`
+- Compatibility: `since-build="211.0"` (IDEA 2021+), Java 11 bytecode (JBR 11
+  compatible), only depends on `com.intellij.modules.platform`
 
 ## License
 

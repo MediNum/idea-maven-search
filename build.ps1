@@ -12,7 +12,7 @@ $dist   = Join-Path $Root 'dist'
 # NOTE: IDEA 2026.2 "Install Plugin from Disk" only loads files ending in .jar
 # (a .zip goes down a different branch and the descriptor load returns null).
 # A plugin zip IS a jar, so ship it as .jar.
-$artifact = Join-Path $Root 'MavenSearch-2.1.0.jar'
+$artifact = Join-Path $Root 'MavenSearch-2.2.0.jar'
 
 if (Test-Path $out)  { Remove-Item $out -Recurse -Force }
 if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
@@ -23,7 +23,8 @@ $jarexe = Join-Path $JDK 'bin\jar.exe'
 $files = @(Get-ChildItem $src -Recurse -Filter *.java | ForEach-Object { $_.FullName })
 
 Write-Host '== javac =='
-& $javac --release 17 -encoding UTF-8 -nowarn -cp "$IDEA\lib\*" -d $out $files
+# --release 11：兼容 IDEA 2021+（其 JBR 为 Java 11）；用 JBR 25 javac 产出 class v55
+& $javac --release 11 -encoding UTF-8 -nowarn -cp "$IDEA\lib\*" -d $out $files
 if ($LASTEXITCODE -ne 0) { throw 'compile failed' }
 Write-Host "compiled $($files.Count) sources"
 

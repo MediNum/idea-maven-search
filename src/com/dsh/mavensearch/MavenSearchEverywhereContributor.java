@@ -11,6 +11,7 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
 import com.intellij.util.Processor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
@@ -20,10 +21,16 @@ import javax.swing.SwingUtilities;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Search Everywhere（双击 Shift）集成：新增 "Maven" Tab，输入关键词实时搜索
- * Maven 组件，回车后打开 Maven Search 工具窗口并搜索该组件。
+ * Maven 组件，回车后打开 Maven Search 工具窗口并进入该词条的二级页面。
+ * <p>
+ * 兼容性：IDEA 2023.2 之前 fetchElements 为
+ * {@code (String, boolean, ProgressIndicator, Consumer)}，2023.2+ 改为
+ * {@code (String, ProgressIndicator, Processor)}；本类同时实现两个重载，
+ * 以便在 IDEA 2021~2026 全版本可用（since-build 211.0）。
  */
 public class MavenSearchEverywhereContributor implements SearchEverywhereContributor<CodereadClient.Artifact> {
 
@@ -65,16 +72,39 @@ public class MavenSearchEverywhereContributor implements SearchEverywhereContrib
         return false;
     }
 
+    /**
+     * 新版（IDEA 2023.2+）fetchElements 签名：实时搜索组件并逐条交给 consumer。
+     */
     @Override
     public void fetchElements(@NotNull String pattern, @NotNull ProgressIndicator progressIndicator,
                               @NotNull Processor<? super CodereadClient.Artifact> consumer) {
-        String kw = pattern.trim();
-        if (kw.isEmpty()) return;
+        for (CodereadClient.Artifact a : doSearch(pattern, progressIndicator)) {
+            if (!consumer.process(a)) break;
+        }
+    }
+
+    /**
+     * 旧版（IDEA 2021~2023.1）fetchElements 签名：同样实时搜索。
+     * 该方法不作为 @Override（当前编译平台接口无此签名），仅为二进制兼容旧版 IDE。
+     */
+    @SuppressWarnings("unused")
+    public void fetchElements(@NotNull String pattern, boolean everywhere,
+                              @NotNull ProgressIndicator progressIndicator,
+                              @NotNull Consumer<? super CodereadClient.Artifact> consumer) {
+        for (CodereadClient.Artifact a : doSearch(pattern, progressIndicator)) {
+            consumer.accept(a);
+        }
+    }
+
+    /** 公共搜索实现：按首选项选择搜索源（默认首选项为空 → 不搜索）。 */
+    private List<CodereadClient.Artifact> doSearch(String pattern, ProgressIndicator progressIndicator) {
+        List<CodereadClient.Artifact> results = new ArrayList<>();
+        String kw = pattern == null ? "" : pattern.trim();
+        if (kw.isEmpty()) return results;
         // 主要数据源由设置页首选项决定（默认首选项为空 → 不搜索，与工具主面板一致）
         List<String> primary = SearchPanel.getExtraDefaultRepos();
-        if (primary.isEmpty()) return;
+        if (primary.isEmpty()) return results;
         try {
-            List<CodereadClient.Artifact> results = new ArrayList<>();
             for (String url : primary) {
                 String kind = SearchPanel.classifyKind(url);
                 if ("coderead".equals(kind)) {
@@ -85,13 +115,11 @@ public class MavenSearchEverywhereContributor implements SearchEverywhereContrib
                     break;
                 }
             }
-            for (CodereadClient.Artifact a : results) {
-                if (progressIndicator.isCanceled()) break;
-                if (!consumer.process(a)) break;
-            }
+            if (progressIndicator != null && progressIndicator.isCanceled()) return new ArrayList<>();
         } catch (Exception ignore) {
             // 网络失败/解析失败：Search Everywhere 中静默无结果即可
         }
+        return results;
     }
 
     @Override
@@ -129,6 +157,22 @@ public class MavenSearchEverywhereContributor implements SearchEverywhereContrib
                 return label;
             }
         };
+    }
+
+    /** 兼容旧版：单独一个 Tab 展示（旧版可能要求实现该方法）。 */
+    @Override
+    public boolean isShownInSeparateTab() {
+        return true;
+    }
+
+    @Nullable
+    @Override
+    public Object getDataForItem(@NotNull CodereadClient.Artifact element, @NotNull String dataId) {
+        return null;
+    }
+
+    @Override
+    public void dispose() {
     }
 
     /** Factory：由 plugin.xml 的 searchEverywhereContributor 扩展点实例化。 */
