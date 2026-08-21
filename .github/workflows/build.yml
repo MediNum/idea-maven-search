@@ -36,7 +36,10 @@ jobs:
           mkdir -p build/installable
           INNER=$(find build -name 'instrumented-*.jar' | head -1)
           echo "inner jar: $INNER"
-          cp "$INNER" build/installable/maven-search-1.5.6.jar
+          # 资产名使用 tag 版本（如 v2.1.0 → maven-search-2.1.0.jar），无 tag（手动触发）时回退 2.1.0
+          VER="${GITHUB_REF_NAME#v}"
+          [ -n "$VER" ] || VER="2.1.0"
+          cp "$INNER" "build/installable/maven-search-${VER}.jar"
           ls -la build/installable/
 
       - name: Upload artifact
